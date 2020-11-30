@@ -112,7 +112,7 @@ Other input parameters include:
         Name of output file that contains the derivatives for each reaction coordinate point.
      -ph position_histrogram_plot
         File name for the histogram plot.
-     -np n_blocks
+     -nb n_blocks
         Number of blocks used in error analysis to calculate block averaged error estimate for each window.
 
 
