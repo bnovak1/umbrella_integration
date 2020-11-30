@@ -57,7 +57,7 @@ Currently only kJ/mol is supported, however it will not be difficult to extend t
 Requirements
 ----------------------
 
-    Python 2.7 or Python 2.6
+    Python 3
     numpy
 
 ---------------------

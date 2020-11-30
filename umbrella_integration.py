@@ -72,15 +72,15 @@ try:
     SCIPY = True
 except ImportError as e:
     SCIPY = False
-    print "An error occurred while importing scipy.integrate, integration with Simpson's method will be disabled: {0}".format(e)
+    print("An error occurred while importing scipy.integrate, integration with Simpson's method will be disabled: {0}".format(e))
 
 try:
-    from helpers.plot_data import simple_plot, create_figure,\
+    from .helpers.plot_data import simple_plot, create_figure,\
         add_axis_to_figure, finalise_figure, generate_histogram, plot_with_kde
     CAN_PLOT = True
 except ImportError as e:
     CAN_PLOT = False
-    print "An error occurred while importing helpers.plot_data, plotting will be disabled: {0}".format(e)
+    print("An error occurred while importing helpers.plot_data, plotting will be disabled: {0}".format(e))
 
 try:
     from integration_errors.calculate_error import trapz_integrate_with_uncertainty
@@ -154,7 +154,7 @@ def run_umbrella_integration(input_files,
 
     # integrate derivatives to calculate final PMF, incl. propagation of errors and plot data
     reaction_coordinate_positions, integral = integrate_derivatives(bin_centers, bin_derivatives, integration_method)
-    mu_sigma_windows = np.mean([window_data["sigma_xi_b_i"] for window_data in input_data.values()])
+    mu_sigma_windows = np.mean([window_data["sigma_xi_b_i"] for window_data in list(input_data.values())])
     integral_point_var = integral_point_variance(bin_centers, bin_derivatives, bin_var, mu_sigma_windows,
         integration_method, integration_error_reference=integration_error_reference, integration_error_method=integration_error_method)
 
@@ -172,9 +172,9 @@ def run_umbrella_integration(input_files,
 def integrate_derivatives(bin_centers, bin_derivatives, integration_method):
 
     if integration_method == "Simpsons":
-        xs, integral = zip(*[(bin_centers[i+1], simps(bin_derivatives[:i + 2], bin_centers[:i + 2])) for i in range(len(bin_derivatives) - 2)])
+        xs, integral = list(zip(*[(bin_centers[i+1], simps(bin_derivatives[:i + 2], bin_centers[:i + 2])) for i in range(len(bin_derivatives) - 2)]))
     elif integration_method == "trapezoidal":
-        xs, integral = zip(*[(np.mean([bin_centers[i], bin_centers[i+1]]), np.trapz(bin_derivatives[:i + 1], bin_centers[:i + 1])) for i in range(len(bin_derivatives) - 1)])
+        xs, integral = list(zip(*[(np.mean([bin_centers[i], bin_centers[i+1]]), np.trapz(bin_derivatives[:i + 1], bin_centers[:i + 1])) for i in range(len(bin_derivatives) - 1)]))
     else:
         raise Exception("Unrecognised integration method: {0}, please use: {1}".format(integration_method, " or ".join(INTEGRATION_METHODS)))
     return xs, integral
@@ -225,7 +225,7 @@ def calculate_bin_derivatives(window_functions, bin_centers, calculate_var=True)
     def calc_total_norm_factor(N_i_list, p_b_i_list, xi):
         return np.sum([N_i*p_b_i(xi) for N_i, p_b_i in zip(N_i_list, p_b_i_list)])
 
-    p_b_i_list, dA_dxi_list, var_dA_dxi_list, N_i_list = zip(*[(funcs["p_b_i"], funcs["dA/dxi"], funcs["var(dA/dxi)"], funcs["N"]) for _, funcs in sorted(window_functions.items())])
+    p_b_i_list, dA_dxi_list, var_dA_dxi_list, N_i_list = list(zip(*[(funcs["p_b_i"], funcs["dA/dxi"], funcs["var(dA/dxi)"], funcs["N"]) for _, funcs in sorted(window_functions.items())]))
     derivatives = np.zeros(len(bin_centers))
     var_derivatives = np.zeros(len(bin_centers))
     for i, xi_bin in enumerate(bin_centers):
@@ -245,7 +245,7 @@ def calculate_bin_derivatives_faster(input_data, bin_centers, temperature):
     BETA = 1.0/RT
     sqrt_2_pi = np.sqrt(2.0*np.pi)
     window_eq_xi = sorted(input_data.keys())
-    window_means, window_sigmas, force_constants, Ns = zip(*[(np.mean(window_data["com"]), np.std(window_data["com"]), window_data["k"], len(window_data["com"])) for _, window_data in sorted(input_data.items())])
+    window_means, window_sigmas, force_constants, Ns = list(zip(*[(np.mean(window_data["com"]), np.std(window_data["com"]), window_data["k"], len(window_data["com"])) for _, window_data in sorted(input_data.items())]))
 
     n_bins = len(bin_centers)
     da_dxi = np.zeros(n_bins)
@@ -291,7 +291,7 @@ def integral_point_variance(bin_centers, bin_derivatives, bin_var, mu_sigma_wind
     integration_error_method=INTEGRATION_ERROR_METHODS[0]):
 
     n_remove = 1 if integration_method == "trapezoidal" else 2 # 2 for simpsons
-    interval_indexes = range(len(bin_centers)-n_remove)
+    interval_indexes = list(range(len(bin_centers)-n_remove))
 
     if integration_error_method == "trapz_analysis" and integration_method == "trapezoidal" and CAN_USE_TRAPZ_INTEGRATION_ERRORS:
         if integration_error_reference == "right":
@@ -344,7 +344,7 @@ def calculate_window_statistics(input_data, n_blocks):
         window_data['var_var_segmented'] = np.var(var_segmented, ddof=1)/float(mu_segmented.shape[0])
 
 def get_segmented_window_statistics(com_distances, block_size):
-    block_boundary_indexes = range(0, len(com_distances), block_size)
+    block_boundary_indexes = list(range(0, len(com_distances), block_size))
     block_means = np.zeros(len(block_boundary_indexes))
     block_vars = np.zeros(len(block_boundary_indexes))
     for i, block_index in enumerate(block_boundary_indexes):
@@ -359,7 +359,7 @@ def maximum_second_derivative_check(derivatives, bin_centers, input_data):
     ddf_ddx = np.diff(derivatives)/np.diff(bin_centers)
     kappa, bin_center = sorted(zip(ddf_ddx, bin_centers[:len(ddf_ddx)]))[0]
     # take the nearest umbrella to the bin_center to get the force constant corresponding to that second derivative
-    umbrella_eq_pos = input_data.keys()
+    umbrella_eq_pos = list(input_data.keys())
     nearest_eq_pos = umbrella_eq_pos[(np.abs(np.array(umbrella_eq_pos)-bin_center)).argmin()]
     fc = input_data[nearest_eq_pos]["k"]
     kappa = -kappa
@@ -386,7 +386,7 @@ def window_separation_distance_check(data, temperature):
                 "Johannes Kaestner and Walter Thiel 2006 (DOI: 10.1063/1.2206775)".format(window_delta, window_size_cutoff)
             if warn_msg not in displayed_messages:
                 logging.warning(warn_msg)
-                logging.debug("Foce constant was: {0:.3g} kJ mol^-1 distance^-2".format(max_fc))
+                logging.debug("Force constant was: {0:.3g} kJ mol^-1 distance^-2".format(max_fc))
                 logging.debug("Umbrella equilibrium points used: {0} - {1}".format(window_centers[i], window_centers[i+1]))
                 displayed_messages.append(warn_msg)
         else:
@@ -394,7 +394,7 @@ def window_separation_distance_check(data, temperature):
                 "Johannes Kaestner and Walter Thiel 2006 (DOI: 10.1063/1.2206775)".format(window_delta, window_size_cutoff)
             if info_msg not in displayed_messages:
                 logging.info(info_msg)
-                logging.debug("\tFoce constant was: {0:.3g} kJ mol^-1 distance^-2".format(max_fc))
+                logging.debug("\tForce constant was: {0:.3g} kJ mol^-1 distance^-2".format(max_fc))
                 logging.debug("\tUmbrella equilibrium points used: {0} - {1}".format(window_centers[i], window_centers[i+1]))
                 displayed_messages.append(info_msg)
 
@@ -416,15 +416,15 @@ def parse_input_files(input_files):
         for l in lines:
             if l.strip()[0] == "#":
                 continue
-            t, com, eq_pos, fc = map(float, l.split()[:4])
+            t, com, eq_pos, fc = list(map(float, l.split()[:4]))
             data.setdefault(eq_pos, {"time":[], "com":[], "fc":[]})
             data[eq_pos]["time"].append(t)
             data[eq_pos]["com"].append(com)
             data[eq_pos]["fc"].append(fc)
     # sort data on time
-    for eq_pos, umbrella_data in data.items():
+    for eq_pos, umbrella_data in list(data.items()):
         t, com, fc = umbrella_data["time"], umbrella_data["com"], umbrella_data["fc"]
-        t, com, fc = zip(*sorted(zip(t, com, fc)))
+        t, com, fc = list(zip(*sorted(zip(t, com, fc))))
         assert np.unique(fc).shape[0] == 1, "All force constants for this window were not equal: {0}".format(eq_pos)
         data[eq_pos] = {"time":np.array(t), "com":np.array(com), "k":fc[0]}
     return data
