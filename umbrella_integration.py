@@ -331,7 +331,7 @@ def var_delta_A(var_derivatives, xis, mu_sigma_windows):
 
 def calculate_window_statistics(input_data, n_blocks):
     for _, window_data in sorted(input_data.items()):
-        block_size = len(window_data["com"])/n_blocks
+        block_size = int(len(window_data["com"])/n_blocks)
         if block_size < MINIMUM_BLOCK_SIZE:
             logging.warning("The number of frames in each block {0} is below the recommended minimum of {1}".format(block_size, MINIMUM_BLOCK_SIZE))
         # calculate mean and standard deviation for segments of window (based on block size from convergence analysis)
